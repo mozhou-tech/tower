@@ -5,5 +5,5 @@ members = [
   "tower-layer",
   "tower-service",
   "tower-test",
-  "examples"
+  "cluster"
 ]

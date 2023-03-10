@@ -111,7 +111,7 @@ fn gen_disco() -> impl Discover<
     Key = Key,
     Error = Error,
     Service = ConcurrencyLimit<
-        impl Service<Req, Response = Rsp, Error = Error, Future = impl Send> + Send,
+        impl Service<Req, Response = Rsp, Error = Error, Future = impl Send + futures_core::Future> + Send,
     >,
 > + Send {
     Disco::new(
