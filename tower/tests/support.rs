@@ -8,7 +8,7 @@ use tokio::sync::mpsc;
 use tokio_stream::Stream;
 use tower::Service;
 
-pub(crate) fn trace_init() -> tracing::subscriber::DefaultGuard {
+pub fn trace_init() -> tracing::subscriber::DefaultGuard {
     let subscriber = tracing_subscriber::fmt()
         .with_test_writer()
         .with_max_level(tracing::Level::TRACE)
