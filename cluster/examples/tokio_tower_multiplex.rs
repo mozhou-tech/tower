@@ -1,14 +1,17 @@
-use async_bincode::AsyncBincodeStream;
-use slab::Slab;
+use std::fmt;
 use std::pin::Pin;
+use std::task::{Context, Poll};
+
+use async_bincode::AsyncBincodeStream;
 use futures_util::future::poll_fn;
+use serde::Deserialize;
+use serde::Serialize;
+use slab::Slab;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tower::multiplex::{
-    client::VecDequePendingStore, Client, MultiplexTransport, Server, TagStore,
+    Client, MultiplexTransport, Server, TagStore,
 };
 use tower_service::Service;
-use serde::Serialize;
-use serde::Deserialize;
 
 pub(crate) struct SlabStore(Slab<()>);
 
@@ -66,9 +69,8 @@ impl Request {
         self.tag = tag;
     }
 }
+
 struct PanicError;
-use std::fmt;
-use std::task::{Context, Poll};
 
 impl<E> From<E> for PanicError
     where
@@ -78,7 +80,9 @@ impl<E> From<E> for PanicError
         panic!("{:?}", e)
     }
 }
+
 struct EchoService;
+
 impl Service<Request> for EchoService {
     type Response = Response;
     type Error = ();
@@ -92,6 +96,7 @@ impl Service<Request> for EchoService {
         futures_util::future::ok(Response::from(r))
     }
 }
+
 impl TagStore<Request, Response> for SlabStore {
     type Tag = usize;
     fn assign_tag(mut self: Pin<&mut Self>, request: &mut Request) -> usize {
