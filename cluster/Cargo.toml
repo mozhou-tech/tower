@@ -26,6 +26,7 @@ syn = "1.0"
 futures-util = { version = "0.3", features = [ "sink" ] }
 futures-core = "0.3"
 futures-sink = "0.3"
+tower-test = { version = "0.4", path = "../tower-test" }
 [[bin]]
 name = "server"
 path = "src/server"
