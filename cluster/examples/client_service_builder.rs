@@ -1,21 +1,23 @@
 use std::fmt;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-
+use std::time::Duration;
 use async_bincode::AsyncBincodeStream;
 use futures_util::future::poll_fn;
-use serde::Deserialize;
-use serde::Serialize;
 use slab::Slab;
 use tokio::net::{TcpListener, TcpStream};
-use tokio_tower::multiplex::{
-    Client, MultiplexTransport, Server, TagStore,
-};
+use tokio_tower::multiplex::{Client, MultiplexTransport, Server, TagStore};
 use tower_service::Service;
+use serde::Deserialize;
+use serde::Serialize;
+use tower::{BoxError, ServiceBuilder, ServiceExt};
+use tower::timeout::Timeout;
+use futures_util::{future::Ready, pin_mut};
+use tower_test::assert_request_eq;
 
 pub(crate) struct SlabStore(Slab<()>);
 
- fn unwrap<T>(r: Result<T, PanicError>) -> T {
+fn unwrap<T>(r: Result<T, PanicError>) -> T {
     if let Ok(t) = r {
         t
     } else {
@@ -116,7 +118,7 @@ pub async fn ready<S: Service<Request>, Request>(svc: &mut S) -> Result<(), S::E
 }
 
 #[tokio::main]
-async fn main() {
+async fn main()->Result<(),BoxError> {
     let rx = TcpListener::bind("127.0.0.1:1110").await.unwrap();
     let addr = rx.local_addr().unwrap();
 
@@ -126,20 +128,11 @@ async fn main() {
     let mut tx: Client<_, PanicError, _> =
         Client::builder(MultiplexTransport::new(tx, SlabStore(Slab::new()))).build();
 
-    // accept
-    let (rx, _) = rx.accept().await.unwrap();
-    let rx = AsyncBincodeStream::from(rx).for_async();
-    let server = Server::new(rx, EchoService);
-
-    tokio::spawn(async move { server.await.unwrap() });
-
-    unwrap(ready(&mut tx).await);
-    let fut1 = tx.call(Request::new(1));
-    unwrap(ready(&mut tx).await);
-    let fut2 = tx.call(Request::new(2));
-    unwrap(ready(&mut tx).await);
-    let fut3 = tx.call(Request::new(3));
-    unwrap(fut1.await).check(1);
-    unwrap(fut2.await).check(2);
-    unwrap(fut3.await).check(3);
+    let mut client = ServiceBuilder::new()
+        .rate_limit(1, Duration::from_secs(1))
+        .timeout(Duration::from_secs(1))
+        .service(tx);
+    let fut = client.ready().await.unwrap().call("hello");
+    assert_request_eq!(handle, true).send_response("world");
+    assert!(fut.await.unwrap());
 }
