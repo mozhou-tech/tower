@@ -20,7 +20,6 @@ use std::{
 };
 
 use futures::Stream;
-use logger::tracing;
 use pin_project::pin_project;
 use tokio::net::TcpListener;
 #[cfg(target_family = "unix")]
@@ -70,7 +69,6 @@ pub trait Incoming: fmt::Debug + Send + 'static {
 impl Incoming for DefaultIncoming {
     async fn accept(&mut self) -> io::Result<Option<Conn>> {
         if let Some(conn) = self.try_next().await? {
-            tracing::trace!("[Net] recv a connection from: {:?}", conn.info.peer_addr);
             Ok(Some(conn))
         } else {
             Ok(None)

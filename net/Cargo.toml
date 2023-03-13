@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 pin-project.workspace = true
-tokio = { workspace = true, features = ["net", "time", "sync", "io-util", "test-util", "macros"] }
+tokio = { workspace = true, features = ["full"] }
 tokio-stream = { workspace = true, features = ["net"] }
 tower.workspace = true
 socket2.workspace = true
@@ -15,3 +15,4 @@ dashmap.workspace = true
 lazy_static.workspace = true
 futures.workspace = true
 bb8.workspace = true
+tokio-tower = "0.6.0"
